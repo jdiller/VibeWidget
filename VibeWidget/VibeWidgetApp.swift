@@ -17,7 +17,7 @@ struct VibeWidgetApp: App {
             ContentView()
                 .environmentObject(settingsManager)
                 .environmentObject(statsManager)
-                .frame(minWidth: 300, minHeight: 200)
+                .frame(minWidth: 250, minHeight: 150)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
@@ -75,9 +75,11 @@ class SettingsManager: ObservableObject {
 class StatsManager: ObservableObject {
     @Published var p50Time: String = "Loading..."
     @Published var p90Time: String = "Loading..."
+    @Published var createdCount: String = "Loading..."
+    @Published var repliedCount: String = "Loading..."
+    @Published var closedCount: String = "Loading..."
     @Published var lastUpdated: Date?
     @Published var error: String?
-    
     private var timer: Timer?
     
     init() {
@@ -124,11 +126,18 @@ class StatsManager: ObservableObject {
                 }
                 
                 let api = GorgiasAPI(email: email, apiKey: apiKey, subdomain: subdomain)
-                let stats = try await api.fetchResolutionTime()
+                
+                async let resolutionStats = api.fetchResolutionTime()
+                async let volumeStats = api.fetchSupportVolume()
+                
+                let (resolution, volume) = try await (resolutionStats, volumeStats)
                 
                 await MainActor.run {
-                    self.p50Time = "50th: \(formatTimeInSeconds(stats.p50))"
-                    self.p90Time = "90th: \(formatTimeInSeconds(stats.p90))"
+                    self.p50Time = "\(resolution.p50)"
+                    self.p90Time = "\(resolution.p90)"
+                    self.createdCount = "\(volume.created)"
+                    self.repliedCount = "\(volume.replied)"
+                    self.closedCount = "\(volume.closed)"
                     self.lastUpdated = Date()
                     self.error = nil
                 }
