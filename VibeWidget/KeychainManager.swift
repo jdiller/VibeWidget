@@ -18,7 +18,7 @@ class KeychainManager {
             kSecAttrService as String: service,
             kSecAttrAccount as String: emailAccount,
             kSecValueData as String: email.data(using: .utf8)!,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            kSecAttrAccessible as String: kSecAttrAccessibleAlways
         ]
         
         // Save API key
@@ -27,7 +27,7 @@ class KeychainManager {
             kSecAttrService as String: service,
             kSecAttrAccount as String: apiKeyAccount,
             kSecValueData as String: apiKey.data(using: .utf8)!,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            kSecAttrAccessible as String: kSecAttrAccessibleAlways
         ]
         
         // Save subdomain
@@ -36,7 +36,7 @@ class KeychainManager {
             kSecAttrService as String: service,
             kSecAttrAccount as String: subdomainAccount,
             kSecValueData as String: subdomain.data(using: .utf8)!,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            kSecAttrAccessible as String: kSecAttrAccessibleAlways
         ]
         
         // First try to delete any existing items
@@ -96,4 +96,12 @@ class KeychainManager {
         
         return (email: email, apiKey: apiKey, subdomain: subdomain)
     }
+}
+
+enum KeychainError: Error {
+    case saveFailed(status: OSStatus)
+    case readFailed(status: OSStatus)
+    case updateFailed(status: OSStatus)
+    case invalidData
+    case accessControlCreationFailed(error: Error?)
 } 
