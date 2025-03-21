@@ -9,31 +9,32 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var statsManager: StatsManager
+    @EnvironmentObject var settingsManager: SettingsManager
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Gorgias Statistics")
-                .font(.title)
-                .fontWeight(.bold)
-            
             if let error = statsManager.error {
                 Text(error)
-                    .font(.caption)
                     .foregroundColor(.red)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal)
             } else {
-                Text(String(format: "%.1f", statsManager.currentStat))
-                    .font(.system(size: 48, weight: .bold))
-                    .foregroundColor(.blue)
+                VStack(spacing: 12) {
+                    Text(statsManager.p50Time)
+                        .font(.system(size: 24, weight: .medium))
+                    Text(statsManager.p90Time)
+                        .font(.system(size: 24, weight: .medium))
+                }
                 
-                Text("Last updated: \(Date().formatted(.dateTime.hour().minute().second()))")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                if let lastUpdated = statsManager.lastUpdated {
+                    Text("Last updated: \(lastUpdated.formatted(.relative(presentation: .named)))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .padding()
-        .frame(minWidth: 200, minHeight: 150)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.windowBackgroundColor))
     }
 }
 

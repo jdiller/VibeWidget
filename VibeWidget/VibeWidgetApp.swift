@@ -17,9 +17,10 @@ struct VibeWidgetApp: App {
             ContentView()
                 .environmentObject(settingsManager)
                 .environmentObject(statsManager)
+                .frame(minWidth: 300, minHeight: 200)
         }
         .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 200, height: 150)
+        .windowResizability(.contentSize)
         
         Settings {
             SettingsView()
@@ -72,58 +73,70 @@ class SettingsManager: ObservableObject {
 }
 
 class StatsManager: ObservableObject {
-    @Published var currentStat: Double = 0.0
+    @Published var p50Time: String = "Loading..."
+    @Published var p90Time: String = "Loading..."
+    @Published var lastUpdated: Date?
     @Published var error: String?
+    
     private var timer: Timer?
-    private var api: GorgiasAPI?
     
     init() {
         startFetching()
     }
     
     func startFetching() {
-        timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
-            Task {
-                await self?.fetchStats()
-            }
-        }
-        Task {
-            await fetchStats()
+        fetchStats()
+        timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            self?.fetchStats()
         }
     }
     
-    private func fetchStats() async {
-        guard let settingsManager = try? SettingsManager(),
-              !settingsManager.apiKey.isEmpty,
-              !settingsManager.email.isEmpty,
-              !settingsManager.subdomain.isEmpty else {
-            DispatchQueue.main.async {
-                self.error = "Please configure your Gorgias credentials in Settings"
-            }
-            return
-        }
-        
-        do {
-            let api = GorgiasAPI(
-                email: settingsManager.email,
-                apiKey: settingsManager.apiKey,
-                subdomain: settingsManager.subdomain
-            )
-            
-            let resolutionTime = try await api.fetchResolutionTime()
-            
-            DispatchQueue.main.async {
-                self.currentStat = resolutionTime
-                self.error = nil
-            }
-        } catch {
-            DispatchQueue.main.async {
-                self.error = "Failed to fetch stats: \(error.localizedDescription)"
-            }
-        }
-    }
-    
-    deinit {
+    func stopFetching() {
         timer?.invalidate()
+        timer = nil
+    }
+    
+    private func formatTimeInSeconds(_ seconds: Int) -> String {
+        if seconds < 60 {
+            return "\(seconds)s"
+        } else if seconds < 3600 {
+            let minutes = seconds / 60
+            let remainingSeconds = seconds % 60
+            return "\(minutes)m \(remainingSeconds)s"
+        } else {
+            let hours = seconds / 3600
+            let minutes = (seconds % 3600) / 60
+            return "\(hours)h \(minutes)m"
+        }
+    }
+    
+    private func fetchStats() {
+        Task {
+            do {
+                guard let credentials = KeychainManager.shared.getCredentials(),
+                      let email = credentials.email,
+                      let apiKey = credentials.apiKey,
+                      let subdomain = credentials.subdomain else {
+                    await MainActor.run {
+                        self.error = "Please configure your Gorgias credentials in Settings"
+                    }
+                    return
+                }
+                
+                let api = GorgiasAPI(email: email, apiKey: apiKey, subdomain: subdomain)
+                let stats = try await api.fetchResolutionTime()
+                
+                await MainActor.run {
+                    self.p50Time = "50th: \(formatTimeInSeconds(stats.p50))"
+                    self.p90Time = "90th: \(formatTimeInSeconds(stats.p90))"
+                    self.lastUpdated = Date()
+                    self.error = nil
+                }
+            } catch {
+                await MainActor.run {
+                    self.error = "Error fetching stats: \(error.localizedDescription)"
+                }
+            }
+        }
     }
 }

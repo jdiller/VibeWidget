@@ -4,7 +4,7 @@ import Security
 class KeychainManager {
     static let shared = KeychainManager()
     
-    private let service = "com.example.vibewidget"
+    private let service = "com.vibewidget.app"
     private let apiKeyAccount = "gorgiasApiKey"
     private let emailAccount = "gorgiasEmail"
     private let subdomainAccount = "gorgiasSubdomain"
@@ -17,7 +17,8 @@ class KeychainManager {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: emailAccount,
-            kSecValueData as String: email.data(using: .utf8)!
+            kSecValueData as String: email.data(using: .utf8)!,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
         
         // Save API key
@@ -25,7 +26,8 @@ class KeychainManager {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: apiKeyAccount,
-            kSecValueData as String: apiKey.data(using: .utf8)!
+            kSecValueData as String: apiKey.data(using: .utf8)!,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
         
         // Save subdomain
@@ -33,7 +35,8 @@ class KeychainManager {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: subdomainAccount,
-            kSecValueData as String: subdomain.data(using: .utf8)!
+            kSecValueData as String: subdomain.data(using: .utf8)!,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
         
         // First try to delete any existing items

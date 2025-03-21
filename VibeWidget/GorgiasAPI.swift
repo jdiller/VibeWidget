@@ -1,5 +1,52 @@
 import Foundation
 
+struct GorgiasResponse: Codable {
+    let data: ResolutionTimeData
+    let meta: MetaData
+}
+
+struct ResolutionTimeData: Codable {
+    let label: String
+    let legend: Legend
+    let data: DataPoints
+}
+
+struct Legend: Codable {
+    let axes: Axes
+}
+
+struct Axes: Codable {
+    let x: String
+    let y: String
+}
+
+struct DataPoints: Codable {
+    let axes: DataAxes
+    let lines: [Line]
+}
+
+struct DataAxes: Codable {
+    let x: [Int]
+    let y: [Int]
+}
+
+struct Line: Codable {
+    let name: String
+    let data: [Int]
+}
+
+struct MetaData: Codable {
+    let end_datetime: String
+    let previous_end_datetime: String
+    let previous_start_datetime: String
+    let start_datetime: String
+}
+
+struct ResolutionTimeStats {
+    let p50: Int
+    let p90: Int
+}
+
 class GorgiasAPI {
     private let baseURL: String
     private let email: String
@@ -9,6 +56,7 @@ class GorgiasAPI {
         self.email = email
         self.apiKey = apiKey
         self.baseURL = "https://\(subdomain).gorgias.com/api"
+        print("Initialized GorgiasAPI with baseURL: \(baseURL)")
     }
     
     private func getAuthHeader() -> String {
@@ -20,8 +68,24 @@ class GorgiasAPI {
         return "Basic \(base64Auth)"
     }
     
-    func fetchResolutionTime() async throws -> Double {
+    private func formatTimeInSeconds(_ seconds: Int) -> String {
+        if seconds < 60 {
+            return "\(seconds)s"
+        } else if seconds < 3600 {
+            let minutes = seconds / 60
+            let remainingSeconds = seconds % 60
+            return "\(minutes)m \(remainingSeconds)s"
+        } else {
+            let hours = seconds / 3600
+            let minutes = (seconds % 3600) / 60
+            return "\(hours)h \(minutes)m"
+        }
+    }
+    
+    func fetchResolutionTime() async throws -> ResolutionTimeStats {
         let endpoint = "\(baseURL)/stats/resolution-time"
+        print("\n=== Making API Request ===")
+        print("Endpoint: \(endpoint)")
         
         // Calculate time range for last 24 hours
         let endDate = Date()
@@ -34,7 +98,10 @@ class GorgiasAPI {
         let startDateString = dateFormatter.string(from: startDate)
         let endDateString = dateFormatter.string(from: endDate)
         
+        print("Date range: \(startDateString) to \(endDateString)")
+        
         guard let url = URL(string: endpoint) else {
+            print("❌ Failed to create URL")
             throw URLError(.badURL)
         }
         
@@ -49,21 +116,66 @@ class GorgiasAPI {
             "end_date": endDateString
         ]
         
-        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw URLError(.badServerResponse)
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+            if let jsonString = String(data: request.httpBody!, encoding: .utf8) {
+                print("Request body: \(jsonString)")
+            }
+        } catch {
+            print("❌ Failed to serialize request body: \(error)")
+            throw error
         }
         
-        struct ResolutionTimeResponse: Codable {
-            let average: Double
+        print("\nRequest headers:")
+        request.allHTTPHeaderFields?.forEach { key, value in
+            if key == "Authorization" {
+                print("\(key): Basic [REDACTED]")
+            } else {
+                print("\(key): \(value)")
+            }
         }
         
-        let decoder = JSONDecoder()
-        let result = try decoder.decode(ResolutionTimeResponse.self, from: data)
-        return result.average
+        do {
+            print("\nSending request...")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ Response is not an HTTP response")
+                throw URLError(.badServerResponse)
+            }
+            
+            print("\nResponse status code: \(httpResponse.statusCode)")
+            print("Response headers:")
+            httpResponse.allHeaderFields.forEach { key, value in
+                print("\(key): \(value)")
+            }
+            
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("\nResponse body: \(responseString)")
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                print("❌ Bad response status code: \(httpResponse.statusCode)")
+                throw URLError(.badServerResponse)
+            }
+            
+            let decoder = JSONDecoder()
+            let result = try decoder.decode(GorgiasResponse.self, from: data)
+            
+            // Get the latest values for 50th and 90th percentiles
+            guard let p50Line = result.data.data.lines.first(where: { $0.name == "50%" }),
+                  let p90Line = result.data.data.lines.first(where: { $0.name == "90%" }),
+                  let p50Value = p50Line.data.last,
+                  let p90Value = p90Line.data.last else {
+                throw URLError(.badServerResponse)
+            }
+            
+            print("\nSuccessfully decoded response. P50: \(formatTimeInSeconds(p50Value)), P90: \(formatTimeInSeconds(p90Value))")
+            return ResolutionTimeStats(p50: p50Value, p90: p90Value)
+            
+        } catch {
+            print("\n❌ Network error: \(error)")
+            throw error
+        }
     }
 } 
