@@ -112,8 +112,8 @@ class GorgiasAPI {
         
         // Create JSON request body
         let requestBody: [String: Any] = [
-            "start_date": startDateString,
-            "end_date": endDateString
+            "start_datetime": startDateString,
+            "end_datetime": endDateString
         ]
         
         do {
@@ -154,7 +154,7 @@ class GorgiasAPI {
                 print("\nResponse body: \(responseString)")
             }
             
-            guard httpResponse.statusCode == 200 else {
+            guard (200...299).contains(httpResponse.statusCode) else {
                 print("❌ Bad response status code: \(httpResponse.statusCode)")
                 throw URLError(.badServerResponse)
             }
