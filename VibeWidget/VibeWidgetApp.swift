@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 @main
 struct VibeWidgetApp: App {
@@ -122,6 +123,22 @@ class StatsManager: ObservableObject {
         }
     }
     
+    private func saveStatsToWidget() {
+        let stats = SharedStats(
+            p50Time: p50Time,
+            p90Time: p90Time,
+            createdCount: createdCount,
+            repliedCount: repliedCount,
+            closedCount: closedCount,
+            lastUpdated: lastUpdated ?? Date()
+        )
+        
+        if let encoded = try? JSONEncoder().encode(stats) {
+            UserDefaults(suiteName: "group.com.gorgias.vibewidget")?.set(encoded, forKey: "sharedStats")
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
+    
     @MainActor
     private func fetchStats() async {
         let email = settingsManager.email
@@ -149,6 +166,9 @@ class StatsManager: ObservableObject {
             
             lastUpdated = Date()
             error = nil
+            
+            // Save stats to widget
+            saveStatsToWidget()
         } catch {
             self.error = error.localizedDescription
         }
