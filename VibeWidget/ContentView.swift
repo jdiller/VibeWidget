@@ -23,19 +23,22 @@ struct ContentView: View {
                     .multilineTextAlignment(.center)
             } else {
                 VStack(spacing: 8) {
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    HStack(alignment: .firstTextBaseline, spacing: 16) {
                         Text("50th:")
                             .foregroundColor(.primary)
-                            .frame(width: 50, alignment: .leading)
+                            .frame(width: 80, alignment: .leading)
                         Text(statsManager.p50Time)
                             .foregroundColor(.secondary)
+                            .frame(width: 120, alignment: .leading)
                     }
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    
+                    HStack(alignment: .firstTextBaseline, spacing: 16) {
                         Text("90th:")
                             .foregroundColor(.primary)
-                            .frame(width: 50, alignment: .leading)
+                            .frame(width: 80, alignment: .leading)
                         Text(statsManager.p90Time)
                             .foregroundColor(.secondary)
+                            .frame(width: 120, alignment: .leading)
                     }
                 }
                 .font(.system(size: 20))
@@ -48,26 +51,31 @@ struct ContentView: View {
                     .foregroundColor(.secondary)
                 
                 VStack(spacing: 8) {
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    HStack(alignment: .firstTextBaseline, spacing: 16) {
                         Text("Created:")
                             .foregroundColor(.primary)
-                            .frame(width: 50, alignment: .leading)
+                            .frame(width: 80, alignment: .leading)
                         Text(statsManager.createdCount)
                             .foregroundColor(.secondary)
+                            .frame(width: 120, alignment: .leading)
                     }
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    
+                    HStack(alignment: .firstTextBaseline, spacing: 16) {
                         Text("Replied:")
                             .foregroundColor(.primary)
-                            .frame(width: 50, alignment: .leading)
+                            .frame(width: 80, alignment: .leading)
                         Text(statsManager.repliedCount)
                             .foregroundColor(.secondary)
+                            .frame(width: 120, alignment: .leading)
                     }
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    
+                    HStack(alignment: .firstTextBaseline, spacing: 16) {
                         Text("Closed:")
                             .foregroundColor(.primary)
-                            .frame(width: 50, alignment: .leading)
+                            .frame(width: 80, alignment: .leading)
                         Text(statsManager.closedCount)
                             .foregroundColor(.secondary)
+                            .frame(width: 120, alignment: .leading)
                     }
                 }
                 .font(.system(size: 20))
@@ -80,12 +88,13 @@ struct ContentView: View {
             }
         }
         .padding(20)
-        .frame(width: 250)
+        .frame(width: 320)
         .background(Color(.windowBackgroundColor))
     }
 }
 
 #Preview {
     ContentView()
-        .environmentObject(StatsManager())
+        .environmentObject(SettingsManager())
+        .environmentObject(StatsManager(settingsManager: SettingsManager()))
 }
