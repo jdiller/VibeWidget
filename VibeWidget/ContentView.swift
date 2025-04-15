@@ -13,7 +13,7 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("Ticket resolution times")
+            Text("Ticket resolution times (last 24h)")
                 .font(.headline)
                 .foregroundColor(.secondary)
             
@@ -46,7 +46,7 @@ struct ContentView: View {
                 Divider()
                     .padding(.vertical, 8)
                 
-                Text("Support volume")
+                Text("Support volume (last 24h)")
                     .font(.headline)
                     .foregroundColor(.secondary)
                 

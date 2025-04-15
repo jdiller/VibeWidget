@@ -16,8 +16,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "57"
             endingLineNumber = "57"
-            landmarkName = "init(email:apiKey:subdomain:)"
-            landmarkType = "7">
+            landmarkName = "SupportVolumeLine"
+            landmarkType = "14">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -32,8 +32,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "52"
             endingLineNumber = "52"
-            landmarkName = "GorgiasAPI"
-            landmarkType = "3">
+            landmarkName = "Line"
+            landmarkType = "14">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -48,7 +48,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "99"
             endingLineNumber = "99"
-            landmarkName = "fetchResolutionTime()"
+            landmarkName = "formatTimeInSeconds(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
